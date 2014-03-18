@@ -2,6 +2,7 @@ package scuttlebutt
 
 import (
 	"testing"
+	"time"
 
 	"github.com/burntsushi/toml"
 	"github.com/stretchr/testify/assert"
@@ -12,6 +13,7 @@ func TestConfig(t *testing.T) {
 	str := `
 app_key = "XXX"
 app_secret = "000"
+interval = "1m30s"
 
 [[account]]
 username = "github_js"
@@ -30,6 +32,7 @@ secret = "456"
 	assert.NoError(t, err)
 	assert.Equal(t, "XXX", c.AppKey)
 	assert.Equal(t, "000", c.AppSecret)
+	assert.Equal(t, 90*time.Second, c.Interval)
 	if assert.Equal(t, 2, len(c.Accounts)) {
 		assert.Equal(t, "github_js", c.Accounts[0].Username)
 		assert.Equal(t, "javascript", c.Accounts[0].Language)

@@ -1,9 +1,14 @@
 package scuttlebutt
 
+import (
+	"time"
+)
+
 // Config represents the configuration used by Scuttlebutt.
 type Config struct {
 	AppKey    string     `toml:"app_key"`
 	AppSecret string     `toml:"app_secret"`
+	Interval  Duration   `toml:"interval"`
 	Accounts  []*Account `toml:"account"`
 }
 
@@ -41,4 +46,16 @@ type tweetEntity struct {
 type tweetURLEntity struct {
 	URL         string `json:"url"`
 	ExpandedURL string `json:"expanded_url"`
+}
+
+// Duration is a helper type for unmarshaling durations in TOML.
+type Duration time.Duration
+
+func (d *Duration) UnmarshalText(text []byte) error {
+	duration, err := time.ParseDuration(string(text))
+	if err != nil {
+		return err
+	}
+	*d = Duration(duration)
+	return nil
 }

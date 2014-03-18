@@ -26,6 +26,6 @@ func NewWatcher(key, secret string) *Watcher {
 }
 
 // Watch watches for new Github project mentions and executes the provided functions once for each message.
-func (w *Watcher) Watch(fn func(m *Message)) {
+func (w *Watcher) Watch(fn func(repositoryID string, m *Message)) {
 
 }
