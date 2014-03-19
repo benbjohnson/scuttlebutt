@@ -13,6 +13,9 @@ import (
 	// "github.com/kurrik/twittergo"
 )
 
+// DefaultSearchInterval is the default time between Twitter searches.
+const DefaultSearchInterval = 5 * time.Second
+
 var (
 	dataDir    = flag.String("data-dir", "", "data directory")
 	configPath = flag.String("config", "", "config path")
@@ -51,11 +54,17 @@ func main() {
 }
 
 func watch(db *scuttlebutt.DB, key string, secret string) {
-	w := scuttlebutt.NewWatcher(key, secret)
-	w.Watch(func(repositoryID string, m *scuttlebutt.Message) {
-		// TODO: Create repo if not exists.
-		// TODO: Add message.
-	})
+	s := scuttlebutt.NewSearcher(db, key, secret)
+	for {
+		err := s.Search(func(repositoryID string, m *scuttlebutt.Message) {
+			// TODO: Create repo if not exists.
+			// TODO: Add message.
+		})
+		if err != nil {
+			log.Print("[watch] ", err)
+		}
+		time.Sleep(DefaultSearchInterval)
+	}
 }
 
 func notify(db *scuttlebutt.DB, accounts []*scuttlebutt.Account, interval time.Duration) {

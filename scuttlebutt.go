@@ -43,23 +43,7 @@ type Repository struct {
 
 // Message represents a message associated with a project and language.
 type Message struct {
-	ID   string `json:"id"`
-	Text string `json:"text"`
-}
-
-type tweet struct {
-	ID       int64                   `json:"id"`
-	Text     string                  `json:"text"`
-	Entities map[string]*tweetEntity `json:"entities"`
-}
-
-type tweetEntity struct {
-	URLs []*tweetURLEntity `json:"urls"`
-}
-
-type tweetURLEntity struct {
-	URL         string `json:"url"`
-	ExpandedURL string `json:"expanded_url"`
+	ID string `json:"id"`
 }
 
 // Duration is a helper type for unmarshaling durations in TOML.
