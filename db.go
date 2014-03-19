@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/boltdb/bolt"
 )
@@ -20,21 +21,77 @@ func (db *DB) Open(path string, mode os.FileMode) error {
 	}
 
 	// Initialize all the required buckets.
-	return db.Do(func(tx *bolt.Tx) error {
+	return db.Do(func(tx *Tx) error {
 		tx.CreateBucketIfNotExists("blacklist")
 		tx.CreateBucketIfNotExists("repositories")
+		tx.CreateBucketIfNotExists("status")
 		return nil
 	})
 }
 
+// With executes a function in the context of a read-only transaction.
+func (db *DB) With(fn func(*Tx) error) error {
+	return db.DB.With(func(tx *bolt.Tx) error {
+		return fn(&Tx{tx})
+	})
+}
+
+// Do executes a function in the context of a writable transaction.
+func (db *DB) Do(fn func(*Tx) error) error {
+	return db.DB.Do(func(tx *bolt.Tx) error {
+		return fn(&Tx{tx})
+	})
+}
+
 // Tx represents a transaction.
-type Tx bolt.Tx
+type Tx struct {
+	*bolt.Tx
+}
+
+// AccountStatus retrieves the status for an account by username.
+func (tx *Tx) AccountStatus(username string) (*AccountStatus, error) {
+	var status AccountStatus
+	value := tx.Bucket("status").Get([]byte(username))
+	if len(value) > 0 {
+		if err := json.Unmarshal(value, &status); err != nil {
+			return nil, err
+		}
+	}
+	return &status, nil
+}
+
+// SetAccountStatus updates the status of an account.
+func (tx *Tx) SetAccountStatus(username string, status *AccountStatus) error {
+	value, err := json.Marshal(status)
+	if err != nil {
+		return err
+	}
+	return tx.Bucket("status").Put([]byte(username), value)
+}
+
+// NotifiableAccounts filters a list of Accounts by which have not notified in a given duration.
+func (tx *Tx) NotifiableAccounts(accounts []*Account, duration time.Duration) ([]*Account, error) {
+	var ret []*Account
+	for _, account := range accounts {
+		// If the last notification is less than the interval then skip this account.
+		status, err := tx.AccountStatus(account.Username)
+		if err != nil {
+			return nil, fmt.Errorf("notifiable accounts error: %s", err)
+		} else if status.NotifyTime.IsZero() || time.Now().Sub(status.NotifyTime) > duration {
+			ret = append(ret, account)
+		}
+	}
+	return ret, nil
+}
 
 // Repository retrieves a repository by ID.
 func (tx *Tx) Repository(id string) (*Repository, error) {
 	r := new(Repository)
 	value := tx.Bucket("repositories").Get([]byte(id))
-	return json.Unmarshal(value, &r)
+	if err := json.Unmarshal(value, &r); err != nil {
+		return nil, err
+	}
+	return r, nil
 }
 
 // PutRepository inserts a repository.
@@ -43,7 +100,7 @@ func (tx *Tx) PutRepository(r *Repository) error {
 	if err != nil {
 		return err
 	}
-	return tx.Put("repositories", []byte(r.ID), value)
+	return tx.Bucket("repositories").Put([]byte(r.ID), value)
 }
 
 // AddMessage inserts a message for an existing repository.

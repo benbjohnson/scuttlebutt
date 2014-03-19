@@ -60,30 +60,46 @@ func watch(db *scuttlebutt.DB, key string, secret string) {
 
 func notify(db *scuttlebutt.DB, accounts []*scuttlebutt.Account, interval time.Duration) {
 	for {
-		var pendingAccounts []*scuttlebutt.Account
-		for _, account := range accounts {
-			// If the last notification is less than the interval then skip this account.
-			lastNotifyTime, err := db.LastNotifyTime(account.Username)
+		time.Sleep(time.Second)
+
+		db.With(func(tx *scuttlebutt.Tx) error {
+			// Retrieve list of accounts ready for notification.
+			notifiable, err := tx.NotifiableAccounts(accounts, interval)
 			if err != nil {
-				log.Print("last notify time error: " + err.Error())
-				continue
-			} else if time.Now().Sub(lastNotifyTime) < interval {
-				continue
+				log.Print("[notify] error: ", err)
+				return nil
+			} else if len(notifiable) == 0 {
+				return nil
 			}
 
-			// Otherwise add the account to the list of pending accounts.
-			pendingAccounts = append(pendingAccounts, account)
-		}
+			log.Print("[notify] Notifiable accounts: ", len(notifiable))
 
-		// If we have no pending accounts then start over.
-		if len(pendingAccounts) == 0 {
-			continue
-		}
+			// Retrieve top repositories.
+			repositories, err := tx.TopRepositoriesByLanguage()
+			if err != nil {
+				log.Print("[notify] top repo error: ", err)
+				return nil
+			}
 
-		// Retrieve top repos.
-		repositories, err := db.TopRepositoriesByLanguage()
-		if err != nil {
-			log.Print("top repositories error: ", err)
-		}
+			// Notify each account that has an available repository.
+			for _, account := range notifiable {
+				r := repositories[account.Language]
+				if r == nil {
+					log.Print("[notify] No repo available: ", account.Username)
+					continue
+				}
+
+				log.Print("[notify] Sending: ", account.Username, r.ID)
+
+				if err := account.Notify(r); err != nil {
+					log.Print("[notify] account notify error: ", err)
+					continue
+				}
+				// TODO(benbjohnson): Update notify time.
+				// TODO(benbjohnson): Update account status.
+			}
+
+			return nil
+		})
 	}
 }

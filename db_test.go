@@ -11,37 +11,42 @@ import (
 // Ensure that repositories and messages can be added and retrieved.
 func TestDB(t *testing.T) {
 	withDB(func(db *DB) {
-		assert.NoError(t, db.PutRepository(&Repository{"//github.com/foo/bar", "go", nil}))
-		assert.NoError(t, db.PutRepository(&Repository{"//github.com/rails/rails", "ruby", nil}))
+		db.Do(func(tx *Tx) error {
+			assert.NoError(t, tx.PutRepository(&Repository{"//github.com/foo/bar", "go", nil}))
+			assert.NoError(t, tx.PutRepository(&Repository{"//github.com/rails/rails", "ruby", nil}))
 
-		assert.NoError(t, db.AddMessage("//github.com/rails/rails", &Message{"123", "XXX"}))
-		assert.NoError(t, db.AddMessage("//github.com/foo/bar", &Message{"456", "YYY"}))
-		assert.NoError(t, db.AddMessage("//github.com/rails/rails", &Message{"789", "ZZZ"}))
+			assert.NoError(t, tx.AddMessage("//github.com/rails/rails", &Message{"123", "XXX"}))
+			assert.NoError(t, tx.AddMessage("//github.com/foo/bar", &Message{"456", "YYY"}))
+			assert.NoError(t, tx.AddMessage("//github.com/rails/rails", &Message{"789", "ZZZ"}))
+			return nil
+		})
 
 		var index int
-		db.ForEachRepository(func(r *Repository) error {
-			switch index {
-			case 0:
-				assert.Equal(t, "//github.com/foo/bar", r.ID)
-				assert.Equal(t, "go", r.Language)
-				if assert.Equal(t, 1, len(r.Messages)) {
-					assert.Equal(t, "456", r.Messages[0].ID)
-					assert.Equal(t, "YYY", r.Messages[0].Text)
+		db.With(func(tx *Tx) error {
+			return tx.ForEachRepository(func(r *Repository) error {
+				switch index {
+				case 0:
+					assert.Equal(t, "//github.com/foo/bar", r.ID)
+					assert.Equal(t, "go", r.Language)
+					if assert.Equal(t, 1, len(r.Messages)) {
+						assert.Equal(t, "456", r.Messages[0].ID)
+						assert.Equal(t, "YYY", r.Messages[0].Text)
+					}
+				case 1:
+					assert.Equal(t, "//github.com/rails/rails", r.ID)
+					assert.Equal(t, "ruby", r.Language)
+					if assert.Equal(t, 2, len(r.Messages)) {
+						assert.Equal(t, "123", r.Messages[0].ID)
+						assert.Equal(t, "XXX", r.Messages[0].Text)
+						assert.Equal(t, "789", r.Messages[1].ID)
+						assert.Equal(t, "ZZZ", r.Messages[1].Text)
+					}
+				default:
+					panic("invalid index")
 				}
-			case 1:
-				assert.Equal(t, "//github.com/rails/rails", r.ID)
-				assert.Equal(t, "ruby", r.Language)
-				if assert.Equal(t, 2, len(r.Messages)) {
-					assert.Equal(t, "123", r.Messages[0].ID)
-					assert.Equal(t, "XXX", r.Messages[0].Text)
-					assert.Equal(t, "789", r.Messages[1].ID)
-					assert.Equal(t, "ZZZ", r.Messages[1].Text)
-				}
-			default:
-				panic("invalid index")
-			}
-			index++
-			return nil
+				index++
+				return nil
+			})
 		})
 		assert.Equal(t, 2, index)
 	})

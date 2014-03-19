@@ -20,6 +20,20 @@ type Account struct {
 	Secret   string `toml:"secret"`
 }
 
+// Notify sends a tweet for an account about a given repository.
+func (a *Account) Notify(r *Repository) error {
+	// TODO(benbjohnson): Create client.
+	// TODO(benbjohnson): Construct tweet text.
+	// TODO(benbjohnson): Send tweet.
+	panic("NOT IMPLEMENTED: Account.Notify()")
+	return nil
+}
+
+// AccountStatus represents status information about a given account.
+type AccountStatus struct {
+	NotifyTime time.Time `json:"notifyTime"`
+}
+
 // Repository represents a code repository.
 type Repository struct {
 	ID       string     `json:"id"`
