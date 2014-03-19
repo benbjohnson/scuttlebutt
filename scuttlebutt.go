@@ -1,6 +1,7 @@
 package scuttlebutt
 
 import (
+	"strings"
 	"time"
 )
 
@@ -56,4 +57,12 @@ func (d *Duration) UnmarshalText(text []byte) error {
 	}
 	*d = Duration(duration)
 	return nil
+}
+
+func splitRepositoryID(id string) (string, string, string) {
+	s := strings.Split(id, "/")
+	if len(s) != 3 {
+		return "", "", ""
+	}
+	return s[0], s[1], s[2]
 }

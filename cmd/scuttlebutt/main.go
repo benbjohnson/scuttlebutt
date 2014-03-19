@@ -49,11 +49,11 @@ func main() {
 
 	// Start goroutines.
 	go watch(db, config.AppKey, config.AppSecret)
-	go notify(db, config.Accounts, time.Duration(config.Interval))
+	// go notify(db, config.Accounts, time.Duration(config.Interval))
 	select {}
 }
 
-func watch(db *scuttlebutt.DB, key string, secret string) {
+func watch(db *scuttlebutt.DB, key, secret string) {
 	s := scuttlebutt.NewSearcher(db, key, secret)
 	for {
 		err := s.Search(func(repositoryID string, m *scuttlebutt.Message) {

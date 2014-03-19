@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/boltdb/bolt"
+	"github.com/google/go-github/github"
 )
 
 // DB represents the data storage for storing messages received and sent.
@@ -24,6 +25,7 @@ func (db *DB) Open(path string, mode os.FileMode) error {
 	return db.Do(func(tx *Tx) error {
 		tx.CreateBucketIfNotExists("blacklist")
 		tx.CreateBucketIfNotExists("repositories")
+		tx.CreateBucketIfNotExists("meta")
 		tx.CreateBucketIfNotExists("status")
 		return nil
 	})
@@ -46,6 +48,16 @@ func (db *DB) Do(fn func(*Tx) error) error {
 // Tx represents a transaction.
 type Tx struct {
 	*bolt.Tx
+}
+
+// Meta retrieves a meta field by name.
+func (tx *Tx) Meta(key string) string {
+	return string(tx.Bucket("meta").Get([]byte(key)))
+}
+
+// SetMeta sets the value of a meta field by name.
+func (tx *Tx) SetMeta(key, value string) error {
+	return tx.Bucket("meta").Put([]byte(key), []byte(value))
 }
 
 // AccountStatus retrieves the status for an account by username.
@@ -88,7 +100,9 @@ func (tx *Tx) NotifiableAccounts(accounts []*Account, duration time.Duration) ([
 func (tx *Tx) Repository(id string) (*Repository, error) {
 	r := new(Repository)
 	value := tx.Bucket("repositories").Get([]byte(id))
-	if err := json.Unmarshal(value, &r); err != nil {
+	if value == nil {
+		return nil, nil
+	} else if err := json.Unmarshal(value, &r); err != nil {
 		return nil, err
 	}
 	return r, nil
@@ -101,6 +115,31 @@ func (tx *Tx) PutRepository(r *Repository) error {
 		return err
 	}
 	return tx.Bucket("repositories").Put([]byte(r.ID), value)
+}
+
+// CreateRepositoryIfNotExists finds the repository from GitHub and creates it locally.
+func (tx *Tx) CreateRepositoryIfNotExists(id string) (*Repository, error) {
+	// Ignore if repo already exists.
+	r, err := tx.Repository(id)
+	if err != nil {
+		return nil, err
+	} else if r != nil {
+		return r, nil
+	}
+
+	// Look up repository and insert it.
+	client := github.NewClient(nil)
+	_, username, repositoryName := splitRepositoryID(id)
+	repo, _, err := client.Repositories.Get(username, repositoryName)
+	if err != nil {
+		return nil, fmt.Errorf("create repo error: %s", err)
+	}
+
+	r = &Repository{ID: id, Language: *repo.Language}
+	if err := tx.PutRepository(r); err != nil {
+		return nil, fmt.Errorf("put repo error: %s", err)
+	}
+	return r, nil
 }
 
 // AddMessage inserts a message for an existing repository.
