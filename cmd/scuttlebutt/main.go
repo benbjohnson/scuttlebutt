@@ -1,10 +1,14 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/benbjohnson/scuttlebutt"
@@ -14,7 +18,7 @@ import (
 )
 
 // DefaultSearchInterval is the default time between Twitter searches.
-const DefaultSearchInterval = 5 * time.Second
+const DefaultSearchInterval = 30 * time.Second
 
 var (
 	dataDir    = flag.String("data-dir", "", "data directory")
@@ -54,15 +58,74 @@ func main() {
 }
 
 func watch(db *scuttlebutt.DB, key, secret string) {
-	s := scuttlebutt.NewSearcher(db, key, secret)
+	s := scuttlebutt.NewSearcher(key, secret)
 	for {
-		err := s.Search(func(repositoryID string, m *scuttlebutt.Message) {
-			// TODO: Create repo if not exists.
-			// TODO: Add message.
+		err := db.Do(func(tx *scuttlebutt.Tx) error {
+			sinceID, _ := strconv.Atoi(tx.Meta("LastTweetID"))
+			log.Println("[watch]", s.SearchURL(sinceID).String())
+			results, err := s.Search(sinceID)
+			if err != nil {
+				return err
+			}
+			log.Printf("[watch] rate limit: %v / %v / %v\n", results.RateLimit, results.RateLimitRemaining, results.RateLimitReset)
+
+			// Process each result.
+			for _, result := range results.Results {
+				log.Printf("[watch] https://twitter.com/_/status/%d - %s", result.ID, result.Text)
+
+				// Update the last tweet id.
+				if result.ID > sinceID {
+					sinceID = result.ID
+				}
+
+				// Find relevant repository.
+				var repositoryID string
+				for _, u := range result.URLs {
+					repositoryID, err = scuttlebutt.ExtractRepositoryID(u)
+					if err != nil {
+						u.Scheme = ""
+						u.RawQuery = ""
+						log.Printf("[watch]   invalid: %s: %s", u.String(), err)
+						break
+					}
+				}
+				if repositoryID == "" {
+					continue
+				}
+
+				// Create message from result.
+				m := &scuttlebutt.Message{ID: result.ID, Text: result.Text}
+
+				// Find or create the repository and add the message.
+				r, err := tx.FindOrCreateRepository(repositoryID)
+				if err != nil {
+					log.Println("[watch]   find or create repo error:", err)
+					continue
+				}
+
+				// Add message to repo.
+				r.Messages = append(r.Messages, m)
+
+				// Update repository.
+				if err := tx.PutRepository(r); err != nil {
+					log.Println("[watch]   update repo error:", err)
+					continue
+				}
+
+				log.Printf("[watch]   OK: %s %s (%d)", r.Language, r.ID, len(r.Messages))
+			}
+
+			// Update highwater mark.
+			if err := tx.SetMeta("LastTweetID", strconv.Itoa(sinceID)); err != nil {
+				return fmt.Errorf("set last tweet id error: %s", err)
+			}
+
+			return nil
 		})
 		if err != nil {
-			log.Print("[watch] ", err)
+			log.Println("[watch]", err)
 		}
+		log.Println(strings.Repeat("=", 70))
 		time.Sleep(DefaultSearchInterval)
 	}
 }
@@ -111,4 +174,9 @@ func notify(db *scuttlebutt.DB, accounts []*scuttlebutt.Account, interval time.D
 			return nil
 		})
 	}
+}
+
+func marshalJSON(v interface{}) []byte {
+	b, _ := json.Marshal(v)
+	return b
 }

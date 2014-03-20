@@ -1,6 +1,10 @@
 package scuttlebutt
 
 import (
+	"encoding/json"
+	"fmt"
+	"net/url"
+	"path"
 	"strings"
 	"time"
 )
@@ -44,7 +48,8 @@ type Repository struct {
 
 // Message represents a message associated with a project and language.
 type Message struct {
-	ID string `json:"id"`
+	ID   int    `json:"id"`
+	Text string `json:"text"`
 }
 
 // Duration is a helper type for unmarshaling durations in TOML.
@@ -59,10 +64,38 @@ func (d *Duration) UnmarshalText(text []byte) error {
 	return nil
 }
 
+// Extracts the repository identifier from a given URL.
+func ExtractRepositoryID(u *url.URL) (string, error) {
+	sections := strings.Split(path.Clean(u.Path), "/")
+	if len(sections) != 3 {
+		return "", fmt.Errorf("invalid section count: %d", len(sections))
+	}
+	host, username, repositoryName := u.Host, sections[1], sections[2]
+
+	// Validate host & username.
+	switch host {
+	case "github.com", "www.github.com":
+	default:
+		return "", fmt.Errorf("invalid host: %s", host)
+	}
+	switch username {
+	case "blog", "explore":
+		return "", fmt.Errorf("invalid username: %s", username)
+	}
+
+	// Rejoin sections and return.
+	return path.Join(host, username, repositoryName), nil
+}
+
 func splitRepositoryID(id string) (string, string, string) {
 	s := strings.Split(id, "/")
 	if len(s) != 3 {
 		return "", "", ""
 	}
 	return s[0], s[1], s[2]
+}
+
+func marshalJSON(v interface{}) []byte {
+	b, _ := json.Marshal(v)
+	return b
 }

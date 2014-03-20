@@ -117,8 +117,8 @@ func (tx *Tx) PutRepository(r *Repository) error {
 	return tx.Bucket("repositories").Put([]byte(r.ID), value)
 }
 
-// CreateRepositoryIfNotExists finds the repository from GitHub and creates it locally.
-func (tx *Tx) CreateRepositoryIfNotExists(id string) (*Repository, error) {
+// FindOrCreateRepository finds or creates the repository from GitHub and creates it locally.
+func (tx *Tx) FindOrCreateRepository(id string) (*Repository, error) {
 	// Ignore if repo already exists.
 	r, err := tx.Repository(id)
 	if err != nil {
@@ -135,7 +135,13 @@ func (tx *Tx) CreateRepositoryIfNotExists(id string) (*Repository, error) {
 		return nil, fmt.Errorf("create repo error: %s", err)
 	}
 
-	r = &Repository{ID: id, Language: *repo.Language}
+	// Default language to blank.
+	language := ""
+	if repo.Language != nil {
+		language = *repo.Language
+	}
+
+	r = &Repository{ID: id, Language: language}
 	if err := tx.PutRepository(r); err != nil {
 		return nil, fmt.Errorf("put repo error: %s", err)
 	}
