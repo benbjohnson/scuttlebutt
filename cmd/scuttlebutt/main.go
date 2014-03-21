@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -13,8 +14,6 @@ import (
 
 	"github.com/benbjohnson/scuttlebutt"
 	"github.com/burntsushi/toml"
-	// "github.com/kurrik/oauth1a"
-	// "github.com/kurrik/twittergo"
 )
 
 // DefaultSearchInterval is the default time between Twitter searches.
@@ -23,6 +22,7 @@ const DefaultSearchInterval = 30 * time.Second
 var (
 	dataDir    = flag.String("data-dir", "", "data directory")
 	configPath = flag.String("config", "", "config path")
+	addr       = flag.String("addr", ":5050", "HTTP port")
 )
 
 func main() {
@@ -54,7 +54,14 @@ func main() {
 	// Start goroutines.
 	go watch(db, config.AppKey, config.AppSecret)
 	// go notify(db, config.Accounts, time.Duration(config.Interval))
-	select {}
+
+	// Start HTTP server.
+	h := &scuttlebutt.Handler{db}
+	http.HandleFunc("/top", h.TopHandleFunc)
+	http.HandleFunc("/repositories", h.RepositoriesHandleFunc)
+	log.Printf("Listening on http://localhost%s", *addr)
+	log.SetFlags(log.LstdFlags)
+	log.Fatal(http.ListenAndServe(*addr, nil))
 }
 
 func watch(db *scuttlebutt.DB, key, secret string) {
