@@ -41,9 +41,11 @@ type AccountStatus struct {
 
 // Repository represents a code repository.
 type Repository struct {
-	ID       string     `json:"id"`
-	Language string     `json:"language"`
-	Messages []*Message `json:"messages"`
+	ID          string     `json:"id"`
+	URL         string     `json:"url"`
+	Description string     `json:"description"`
+	Language    string     `json:"language"`
+	Messages    []*Message `json:"messages"`
 }
 
 // Message represents a message associated with a project and language.

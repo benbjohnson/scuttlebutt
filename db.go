@@ -135,13 +135,18 @@ func (tx *Tx) FindOrCreateRepository(id string) (*Repository, error) {
 		return nil, fmt.Errorf("create repo error: %s", err)
 	}
 
-	// Default language to blank.
-	language := ""
+	// Create repository.
+	r = &Repository{ID: id}
+	if repo.HTMLURL != nil {
+		r.URL = *repo.HTMLURL
+	}
 	if repo.Language != nil {
-		language = *repo.Language
+		r.Language = *repo.Language
+	}
+	if repo.Description != nil {
+		r.Description = *repo.Description
 	}
 
-	r = &Repository{ID: id, Language: language}
 	if err := tx.PutRepository(r); err != nil {
 		return nil, fmt.Errorf("put repo error: %s", err)
 	}

@@ -105,6 +105,7 @@ func watch(db *scuttlebutt.DB, key, secret string) {
 
 				// Find or create the repository and add the message.
 				r, err := tx.FindOrCreateRepository(repositoryID)
+				log.Println("[watch] repo: ", string(marshalJSON(r)))
 				if err != nil {
 					log.Println("[watch]   find or create repo error:", err)
 					continue
