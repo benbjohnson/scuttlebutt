@@ -22,7 +22,7 @@ func (db *DB) Open(path string, mode os.FileMode) error {
 	}
 
 	// Initialize all the required buckets.
-	return db.Do(func(tx *Tx) error {
+	return db.Update(func(tx *Tx) error {
 		tx.CreateBucketIfNotExists("blacklist")
 		tx.CreateBucketIfNotExists("repositories")
 		tx.CreateBucketIfNotExists("meta")
@@ -31,16 +31,16 @@ func (db *DB) Open(path string, mode os.FileMode) error {
 	})
 }
 
-// With executes a function in the context of a read-only transaction.
-func (db *DB) With(fn func(*Tx) error) error {
-	return db.DB.With(func(tx *bolt.Tx) error {
+// View executes a function in the context of a read-only transaction.
+func (db *DB) View(fn func(*Tx) error) error {
+	return db.DB.View(func(tx *bolt.Tx) error {
 		return fn(&Tx{tx})
 	})
 }
 
-// Do executes a function in the context of a writable transaction.
-func (db *DB) Do(fn func(*Tx) error) error {
-	return db.DB.Do(func(tx *bolt.Tx) error {
+// Update executes a function in the context of a writable transaction.
+func (db *DB) Update(fn func(*Tx) error) error {
+	return db.DB.Update(func(tx *bolt.Tx) error {
 		return fn(&Tx{tx})
 	})
 }

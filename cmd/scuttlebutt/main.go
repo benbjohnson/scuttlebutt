@@ -65,20 +65,21 @@ func main() {
 }
 
 func watch(db *scuttlebutt.DB, key, secret string) {
+	logger := log.New(os.Stdout, "[watch] ", log.LstdFlags)
 	s := scuttlebutt.NewSearcher(key, secret)
 	for {
-		err := db.Do(func(tx *scuttlebutt.Tx) error {
+		err := db.Update(func(tx *scuttlebutt.Tx) error {
 			sinceID, _ := strconv.Atoi(tx.Meta("LastTweetID"))
-			log.Println("[watch]", s.SearchURL(sinceID).String())
+			logger.Println(s.SearchURL(sinceID).String())
 			results, err := s.Search(sinceID)
 			if err != nil {
 				return err
 			}
-			log.Printf("[watch] rate limit: %v / %v / %v\n", results.RateLimit, results.RateLimitRemaining, results.RateLimitReset)
+			logger.Printf("rate limit: %v / %v / %v\n", results.RateLimit, results.RateLimitRemaining, results.RateLimitReset)
 
 			// Process each result.
 			for _, result := range results.Results {
-				log.Printf("[watch] https://twitter.com/_/status/%d - %s", result.ID, result.Text)
+				logger.Printf("https://twitter.com/_/status/%d", result.ID)
 
 				// Update the last tweet id.
 				if result.ID > sinceID {
@@ -92,7 +93,6 @@ func watch(db *scuttlebutt.DB, key, secret string) {
 					if err != nil {
 						u.Scheme = ""
 						u.RawQuery = ""
-						log.Printf("[watch]   invalid: %s: %s", u.String(), err)
 						break
 					}
 				}
@@ -105,9 +105,10 @@ func watch(db *scuttlebutt.DB, key, secret string) {
 
 				// Find or create the repository and add the message.
 				r, err := tx.FindOrCreateRepository(repositoryID)
-				log.Println("[watch] repo: ", string(marshalJSON(r)))
 				if err != nil {
-					log.Println("[watch]   find or create repo error:", err)
+					if !strings.Contains(err.Error(), "404 Not Found") {
+						logger.Println("find or create repo error:", err)
+					}
 					continue
 				}
 
@@ -116,11 +117,11 @@ func watch(db *scuttlebutt.DB, key, secret string) {
 
 				// Update repository.
 				if err := tx.PutRepository(r); err != nil {
-					log.Println("[watch]   update repo error:", err)
+					logger.Println("update repo error:", err)
 					continue
 				}
 
-				log.Printf("[watch]   OK: %s %s (%d)", r.Language, r.ID, len(r.Messages))
+				logger.Printf("OK: %s %s (%d)", r.Language, r.ID, len(r.Messages))
 			}
 
 			// Update highwater mark.
@@ -131,9 +132,9 @@ func watch(db *scuttlebutt.DB, key, secret string) {
 			return nil
 		})
 		if err != nil {
-			log.Println("[watch]", err)
+			logger.Println(err)
 		}
-		log.Println(strings.Repeat("=", 70))
+		logger.Println(strings.Repeat("=", 60))
 		time.Sleep(DefaultSearchInterval)
 	}
 }
@@ -142,7 +143,7 @@ func notify(db *scuttlebutt.DB, accounts []*scuttlebutt.Account, interval time.D
 	for {
 		time.Sleep(time.Second)
 
-		db.With(func(tx *scuttlebutt.Tx) error {
+		db.View(func(tx *scuttlebutt.Tx) error {
 			// Retrieve list of accounts ready for notification.
 			notifiable, err := tx.NotifiableAccounts(accounts, interval)
 			if err != nil {
