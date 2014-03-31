@@ -12,12 +12,14 @@ import (
 
 // DB represents the data storage for storing messages received and sent.
 type DB struct {
-	bolt.DB
+	*bolt.DB
 }
 
 // Open opens and initializes the database.
 func (db *DB) Open(path string, mode os.FileMode) error {
-	if err := db.DB.Open(path, mode); err != nil {
+	var err error
+	db.DB, err = bolt.Open(path, mode)
+	if err != nil {
 		return err
 	}
 
