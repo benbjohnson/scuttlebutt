@@ -3,10 +3,14 @@ package scuttlebutt
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"path"
 	"strings"
 	"time"
+
+	"github.com/kurrik/oauth1a"
+	"github.com/kurrik/twittergo"
 )
 
 // Config represents the configuration used by Scuttlebutt.
@@ -26,12 +30,38 @@ type Account struct {
 }
 
 // Notify sends a tweet for an account about a given repository.
-func (a *Account) Notify(r *Repository) error {
-	// TODO(benbjohnson): Create client.
-	// TODO(benbjohnson): Construct tweet text.
-	// TODO(benbjohnson): Send tweet.
-	panic("NOT IMPLEMENTED: Account.Notify()")
-	return nil
+func (a *Account) Notify(c *twittergo.Client, r *Repository) (uint64, error) {
+	// Construct tweet text.
+	msg := r.NotifyText()
+
+	// Construct request.
+	req, err := http.NewRequest("POST", "/1.1/statuses/update.json", strings.NewReader((url.Values{"status": {msg}}).Encode()))
+	if err != nil {
+		return 0, fmt.Errorf("notify request: %s", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	// Send request.
+	resp, err := c.SendRequest(req)
+	if err != nil {
+		return 0, fmt.Errorf("notify send: %s", err)
+	}
+
+	// Parse the response.
+	var tweet twittergo.Tweet
+	if err := resp.Parse(&tweet); err != nil {
+		return 0, fmt.Errorf("notify: %s", err)
+	}
+
+	return tweet.Id(), nil
+}
+
+// Client creates a new Twitter client for the account.
+func (a *Account) Client(key, secret string) *twittergo.Client {
+	return twittergo.NewClient(
+		&oauth1a.ClientConfig{ConsumerKey: key, ConsumerSecret: secret},
+		oauth1a.NewAuthorizedConfig(a.Key, a.Secret),
+	)
 }
 
 // AccountStatus represents status information about a given account.
@@ -46,6 +76,32 @@ type Repository struct {
 	Description string     `json:"description"`
 	Language    string     `json:"language"`
 	Messages    []*Message `json:"messages"`
+}
+
+// Name returns the name of the repository.
+func (r *Repository) Name() string {
+	return path.Base(r.ID)
+}
+
+// NotifyText returns a tweet sized message containing the repository name,
+// description, and url.
+func (r *Repository) NotifyText() string {
+	var maxLength = 140
+	var shortUrlLength = 23
+	var padding = 2
+	name, url := r.Name(), r.URL
+	format := "%s - %s %s"
+
+	// Calculate the remaining characters without the description.
+	remaining := maxLength - len(fmt.Sprintf(format, name, "", strings.Repeat(" ", shortUrlLength))) - padding
+
+	// Shorten the description, if necessary.
+	var description = strings.TrimSpace(r.Description)
+	if len(description) > remaining {
+		description = strings.TrimSpace(description[:remaining-3]) + "..."
+	}
+
+	return fmt.Sprintf(format, name, description, url)
 }
 
 // Message represents a message associated with a project and language.

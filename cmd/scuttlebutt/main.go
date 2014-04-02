@@ -53,7 +53,7 @@ func main() {
 
 	// Start goroutines.
 	go watch(db, config.AppKey, config.AppSecret)
-	// go notify(db, config.Accounts, time.Duration(config.Interval))
+	// go notify(db, config.AppKey, config.AppSecret, config.Accounts, time.Duration(config.Interval))
 
 	// Start HTTP server.
 	h := &scuttlebutt.Handler{db}
@@ -139,7 +139,7 @@ func watch(db *scuttlebutt.DB, key, secret string) {
 	}
 }
 
-func notify(db *scuttlebutt.DB, accounts []*scuttlebutt.Account, interval time.Duration) {
+func notify(db *scuttlebutt.DB, key, secret string, accounts []*scuttlebutt.Account, interval time.Duration) {
 	for {
 		time.Sleep(time.Second)
 
@@ -172,12 +172,14 @@ func notify(db *scuttlebutt.DB, accounts []*scuttlebutt.Account, interval time.D
 
 				log.Print("[notify] Sending: ", account.Username, r.ID)
 
-				if err := account.Notify(r); err != nil {
+				if err := account.Notify(account.Client(key, secret), r); err != nil {
 					log.Print("[notify] account notify error: ", err)
 					continue
 				}
+
 				// TODO(benbjohnson): Update notify time.
 				// TODO(benbjohnson): Update account status.
+				// TODO(benbjohnson): Add repository to the blacklist.
 			}
 
 			return nil

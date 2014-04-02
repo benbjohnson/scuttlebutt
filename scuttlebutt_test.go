@@ -45,3 +45,15 @@ secret = "456"
 		assert.Equal(t, "456", c.Accounts[1].Secret)
 	}
 }
+
+// Ensure that a repository notify text is appropriately formatted.
+func TestRepositoryNotifyText(t *testing.T) {
+	r := &Repository{ID: "github.com/rails/rails", URL: "https://github.com/rails/rails", Description: "Ruby on Rails"}
+	assert.Equal(t, "rails - Ruby on Rails https://github.com/rails/rails", r.NotifyText())
+}
+
+// Ensure that a repository notify text is appropriately formatted with a long description.
+func TestRepositoryNotifyTextDescriptionTooLong(t *testing.T) {
+	r := &Repository{ID: "github.com/browserstate/history.js", URL: "https://github.com/browserstate/history.js", Description: "History.js gracefully supports the HTML5 History/State APIs (pushState, replaceState, onPopState) in all browsers. Including continued support for data, titles, replaceState. Supports jQuery, MooTools and Prototype. "}
+	assert.Equal(t, "history.js - History.js gracefully supports the HTML5 History/State APIs (pushState, replaceState, onPopState)... https://github.com/browserstate/history.js", r.NotifyText())
+}
