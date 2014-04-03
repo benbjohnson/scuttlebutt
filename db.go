@@ -182,7 +182,7 @@ func (tx *Tx) AddMessage(repositoryID string, m *Message) error {
 func (tx *Tx) ForEachRepository(fn func(*Repository) error) error {
 	// Create blacklist first.
 	blacklist := make(map[string]bool)
-	err := tx.Bucket("blacklist").ForEach(func(k, v []byte) error {
+	err := tx.Bucket("blacklist").ForEach(func(k, _ []byte) error {
 		blacklist[string(k)] = true
 		return nil
 	})
@@ -219,4 +219,24 @@ func (tx *Tx) TopRepositoriesByLanguage() (map[string]*Repository, error) {
 		return nil, err
 	}
 	return m, nil
+}
+
+// Blacklist retrieves a list of repository ids on the blacklist.
+func (tx *Tx) Blacklist() []string {
+	blacklist := make([]string, 0)
+	tx.Bucket("blacklist").ForEach(func(k, _ []byte) error {
+		blacklist = append(blacklist, string(k))
+		return nil
+	})
+	return blacklist
+}
+
+// AddToBlacklist adds a repository id to the blacklist.
+func (tx *Tx) AddToBlacklist(repositoryID string) error {
+	return tx.Bucket("blacklist").Put([]byte(repositoryID), []byte{})
+}
+
+// RemoveFromBlacklist removes a repository id from the blacklist.
+func (tx *Tx) RemoveFromBlacklist(repositoryID string) error {
+	return tx.Bucket("blacklist").Delete([]byte(repositoryID))
 }

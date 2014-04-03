@@ -53,7 +53,7 @@ func main() {
 
 	// Start goroutines.
 	go watch(db, config.AppKey, config.AppSecret)
-	// go notify(db, config.AppKey, config.AppSecret, config.Accounts, time.Duration(config.Interval))
+	go notify(db, config.AppKey, config.AppSecret, config.Accounts, time.Duration(config.Interval))
 
 	// Start HTTP server.
 	h := &scuttlebutt.Handler{db}
@@ -134,31 +134,32 @@ func watch(db *scuttlebutt.DB, key, secret string) {
 		if err != nil {
 			logger.Println(err)
 		}
-		logger.Println(strings.Repeat("=", 60))
+		logger.Println(strings.Repeat("=", 40))
 		time.Sleep(DefaultSearchInterval)
 	}
 }
 
 func notify(db *scuttlebutt.DB, key, secret string, accounts []*scuttlebutt.Account, interval time.Duration) {
+	logger := log.New(os.Stdout, "[notify] ", log.LstdFlags)
 	for {
 		time.Sleep(time.Second)
 
-		db.View(func(tx *scuttlebutt.Tx) error {
+		db.Update(func(tx *scuttlebutt.Tx) error {
 			// Retrieve list of accounts ready for notification.
 			notifiable, err := tx.NotifiableAccounts(accounts, interval)
 			if err != nil {
-				log.Print("[notify] error: ", err)
+				logger.Print("error: ", err)
 				return nil
 			} else if len(notifiable) == 0 {
 				return nil
 			}
 
-			log.Print("[notify] Notifiable accounts: ", len(notifiable))
+			logger.Print("notifiable accounts: ", len(notifiable))
 
 			// Retrieve top repositories.
 			repositories, err := tx.TopRepositoriesByLanguage()
 			if err != nil {
-				log.Print("[notify] top repo error: ", err)
+				logger.Print("top repo error: ", err)
 				return nil
 			}
 
@@ -166,20 +167,29 @@ func notify(db *scuttlebutt.DB, key, secret string, accounts []*scuttlebutt.Acco
 			for _, account := range notifiable {
 				r := repositories[account.Language]
 				if r == nil {
-					log.Print("[notify] No repo available: ", account.Username)
+					logger.Print("No repo available: ", account.Username)
 					continue
 				}
 
-				log.Print("[notify] Sending: ", account.Username, r.ID)
+				logger.Println("sending: ", account.Username, r.ID)
+				tweetID, err := account.Notify(account.Client(key, secret), r)
+				if err != nil {
+					logger.Print("account notify: ", err)
+					continue
+				}
+				logger.Printf("sent: https://twitter.com/_/status/%d", tweetID)
 
-				if err := account.Notify(account.Client(key, secret), r); err != nil {
-					log.Print("[notify] account notify error: ", err)
+				// Update notify status.
+				if err := tx.SetAccountStatus(account.Username, &scuttlebutt.AccountStatus{time.Now()}); err != nil {
+					logger.Print("account status: ", err)
 					continue
 				}
 
-				// TODO(benbjohnson): Update notify time.
-				// TODO(benbjohnson): Update account status.
-				// TODO(benbjohnson): Add repository to the blacklist.
+				// Add repository to the blacklist.
+				if err := tx.AddToBlacklist(r.ID); err != nil {
+					logger.Print("add to blacklist: ", err)
+					continue
+				}
 			}
 
 			return nil
