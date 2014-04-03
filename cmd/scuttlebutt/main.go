@@ -19,6 +19,9 @@ import (
 // DefaultSearchInterval is the default time between Twitter searches.
 const DefaultSearchInterval = 30 * time.Second
 
+// DefaultNotifyInterval is the default time between notification attempts.
+const DefaultNotifyInterval = 60 * time.Second
+
 var (
 	dataDir    = flag.String("data-dir", "", "data directory")
 	configPath = flag.String("config", "", "config path")
@@ -142,7 +145,7 @@ func watch(db *scuttlebutt.DB, key, secret string) {
 func notify(db *scuttlebutt.DB, key, secret string, accounts []*scuttlebutt.Account, interval time.Duration) {
 	logger := log.New(os.Stdout, "[notify] ", log.LstdFlags)
 	for {
-		time.Sleep(time.Second)
+		time.Sleep(DefaultNotifyInterval)
 
 		db.Update(func(tx *scuttlebutt.Tx) error {
 			// Retrieve list of accounts ready for notification.
