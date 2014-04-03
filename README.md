@@ -9,30 +9,30 @@ information. Ba-da-bing!
 
 ## Twitter Accounts
 
-Below is a list of all the active scuttlebutt Twitter accounts:
+Below is a list of all the languages which have Twitter accounts:
 
-* [github_as3](https://twitter.com/github_as3)
-* [github_c](https://twitter.com/github_c)
-* [github_clj](https://twitter.com/github_clj)
-* [github_cpp](https://twitter.com/github_cpp)
-* [github_csharp](https://twitter.com/github_csharp)
-* [github_css](https://twitter.com/github_css)
-* [github_el](https://twitter.com/github_el)
-* [github_erlang](https://twitter.com/github_erlang)
-* [github_fsharp](https://twitter.com/github_fsharp)
-* [github_go](https://twitter.com/github_go)
-* [github_hs](https://twitter.com/github_hs)
-* [github_java](https://twitter.com/github_java)
-* [github_js](https://twitter.com/github_js)
-* [github_objc](https://twitter.com/github_objc)
-* [github_php](https://twitter.com/github_php)
-* [github_pl](https://twitter.com/github_pl)
-* [github_py](https://twitter.com/github_py)
-* [github_r](https://twitter.com/github_r)
-* [github_rb](https://twitter.com/github_rb)
-* [github_scala](https://twitter.com/github_scala)
-* [github_sh](https://twitter.com/github_sh)
-* [github_viml](https://twitter.com/github_viml)
+* [ActionScript](https://twitter.com/github_as3)
+* [C](https://twitter.com/github_c)
+* [Clojure](https://twitter.com/github_clj)
+* [C++](https://twitter.com/github_cpp)
+* [C#](https://twitter.com/github_csharp)
+* [CSS](https://twitter.com/github_css)
+* [Emacs Lisp](https://twitter.com/github_el)
+* [Erlang](https://twitter.com/github_erlang)
+* [F#](https://twitter.com/github_fsharp)
+* [Go](https://twitter.com/github_go)
+* [Haskell](https://twitter.com/github_hs)
+* [Java](https://twitter.com/github_java)
+* [JavaScript](https://twitter.com/github_js)
+* [Objective-C](https://twitter.com/github_objc)
+* [PHP](https://twitter.com/github_php)
+* [Perl](https://twitter.com/github_pl)
+* [Python](https://twitter.com/github_py)
+* [R](https://twitter.com/github_r)
+* [Ruby](https://twitter.com/github_rb)
+* [Scala](https://twitter.com/github_scala)
+* [Shell](https://twitter.com/github_sh)
+* [VimL](https://twitter.com/github_viml)
 
 Please report any problems you see on those accounts.
 
