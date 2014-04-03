@@ -160,11 +160,13 @@ func notify(db *scuttlebutt.DB, key, secret string, accounts []*scuttlebutt.Acco
 			logger.Print("notifiable accounts: ", len(notifiable))
 
 			// Retrieve top repositories.
+			var startTime = time.Now()
 			repositories, err := tx.TopRepositoriesByLanguage()
 			if err != nil {
 				logger.Print("top repo error: ", err)
 				return nil
 			}
+			logger.Print("top repo time: ", time.Since(startTime))
 
 			// Notify each account that has an available repository.
 			for _, account := range notifiable {
