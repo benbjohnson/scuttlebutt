@@ -73,12 +73,11 @@ func watch(db *scuttlebutt.DB, key, secret string) {
 	for {
 		err := db.Update(func(tx *scuttlebutt.Tx) error {
 			sinceID, _ := strconv.Atoi(tx.Meta("LastTweetID"))
-			logger.Println(s.SearchURL(sinceID).String())
 			results, err := s.Search(sinceID)
 			if err != nil {
 				return err
 			}
-			logger.Printf("rate limit: %v / %v / %v\n", results.RateLimit, results.RateLimitRemaining, results.RateLimitReset)
+			logger.Printf("rate limit: %v / %v\n", results.RateLimit, results.RateLimitRemaining)
 
 			// Process each result.
 			for _, result := range results.Results {
