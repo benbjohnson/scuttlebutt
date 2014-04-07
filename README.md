@@ -33,7 +33,7 @@ Below is a list of all the languages which have Twitter accounts:
 * [Ruby](https://twitter.com/github_rb)
 * [Scala](https://twitter.com/github_scala)
 * [Shell](https://twitter.com/github_sh)
-* [VimL](https://twitter.com/github_viml)||
+* [VimL](https://twitter.com/github_viml)
 
 Please report any problems you see on those accounts.
 
