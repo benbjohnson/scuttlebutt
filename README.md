@@ -17,7 +17,6 @@ Below is a list of all the languages which have Twitter accounts:
 * [C++](https://twitter.com/oss_cpp)
 * [C#](https://twitter.com/oss_csharp)
 * [CSS](https://twitter.com/oss_css)
-* [Emacs Lisp](https://twitter.com/oss_el)
 * [Erlang](https://twitter.com/oss_erlang)
 * [F#](https://twitter.com/oss_fsharp)
 * [Go](https://twitter.com/oss_go)
