@@ -25,10 +25,10 @@ func (db *DB) Open(path string, mode os.FileMode) error {
 
 	// Initialize all the required buckets.
 	return db.Update(func(tx *Tx) error {
-		tx.CreateBucketIfNotExists("blacklist")
-		tx.CreateBucketIfNotExists("repositories")
-		tx.CreateBucketIfNotExists("meta")
-		tx.CreateBucketIfNotExists("status")
+		tx.CreateBucketIfNotExists([]byte("blacklist"))
+		tx.CreateBucketIfNotExists([]byte("repositories"))
+		tx.CreateBucketIfNotExists([]byte("meta"))
+		tx.CreateBucketIfNotExists([]byte("status"))
 		return nil
 	})
 }
@@ -54,18 +54,18 @@ type Tx struct {
 
 // Meta retrieves a meta field by name.
 func (tx *Tx) Meta(key string) string {
-	return string(tx.Bucket("meta").Get([]byte(key)))
+	return string(tx.Bucket([]byte("meta")).Get([]byte(key)))
 }
 
 // SetMeta sets the value of a meta field by name.
 func (tx *Tx) SetMeta(key, value string) error {
-	return tx.Bucket("meta").Put([]byte(key), []byte(value))
+	return tx.Bucket([]byte("meta")).Put([]byte(key), []byte(value))
 }
 
 // AccountStatus retrieves the status for an account by username.
 func (tx *Tx) AccountStatus(username string) (*AccountStatus, error) {
 	var status AccountStatus
-	value := tx.Bucket("status").Get([]byte(username))
+	value := tx.Bucket([]byte("status")).Get([]byte(username))
 	if len(value) > 0 {
 		if err := json.Unmarshal(value, &status); err != nil {
 			return nil, err
@@ -80,7 +80,7 @@ func (tx *Tx) SetAccountStatus(username string, status *AccountStatus) error {
 	if err != nil {
 		return err
 	}
-	return tx.Bucket("status").Put([]byte(username), value)
+	return tx.Bucket([]byte("status")).Put([]byte(username), value)
 }
 
 // NotifiableAccounts filters a list of Accounts by which have not notified in a given duration.
@@ -101,7 +101,7 @@ func (tx *Tx) NotifiableAccounts(accounts []*Account, duration time.Duration) ([
 // Repository retrieves a repository by ID.
 func (tx *Tx) Repository(id string) (*Repository, error) {
 	r := new(Repository)
-	value := tx.Bucket("repositories").Get([]byte(id))
+	value := tx.Bucket([]byte("repositories")).Get([]byte(id))
 	if value == nil {
 		return nil, nil
 	} else if err := json.Unmarshal(value, &r); err != nil {
@@ -116,7 +116,7 @@ func (tx *Tx) PutRepository(r *Repository) error {
 	if err != nil {
 		return err
 	}
-	return tx.Bucket("repositories").Put([]byte(r.ID), value)
+	return tx.Bucket([]byte("repositories")).Put([]byte(r.ID), value)
 }
 
 // FindOrCreateRepository finds or creates the repository from GitHub and creates it locally.
@@ -158,7 +158,7 @@ func (tx *Tx) FindOrCreateRepository(id string) (*Repository, error) {
 // AddMessage inserts a message for an existing repository.
 func (tx *Tx) AddMessage(repositoryID string, m *Message) error {
 	var r Repository
-	var bucket = tx.Bucket("repositories")
+	var bucket = tx.Bucket([]byte("repositories"))
 	value := bucket.Get([]byte(repositoryID))
 	if len(value) == 0 {
 		return fmt.Errorf("repository not found: %s", repositoryID)
@@ -182,7 +182,7 @@ func (tx *Tx) AddMessage(repositoryID string, m *Message) error {
 func (tx *Tx) ForEachRepository(fn func(*Repository) error) error {
 	// Create blacklist first.
 	blacklist := make(map[string]bool)
-	err := tx.Bucket("blacklist").ForEach(func(k, _ []byte) error {
+	err := tx.Bucket([]byte("blacklist")).ForEach(func(k, _ []byte) error {
 		blacklist[string(k)] = true
 		return nil
 	})
@@ -191,7 +191,7 @@ func (tx *Tx) ForEachRepository(fn func(*Repository) error) error {
 	}
 
 	// Iterate over all repositories not on the blacklist.
-	return tx.Bucket("repositories").ForEach(func(k, v []byte) error {
+	return tx.Bucket([]byte("repositories")).ForEach(func(k, v []byte) error {
 		if blacklist[string(k)] {
 			return nil
 		}
@@ -224,7 +224,7 @@ func (tx *Tx) TopRepositoriesByLanguage() (map[string]*Repository, error) {
 // Blacklist retrieves a list of repository ids on the blacklist.
 func (tx *Tx) Blacklist() []string {
 	blacklist := make([]string, 0)
-	tx.Bucket("blacklist").ForEach(func(k, _ []byte) error {
+	tx.Bucket([]byte("blacklist")).ForEach(func(k, _ []byte) error {
 		blacklist = append(blacklist, string(k))
 		return nil
 	})
@@ -233,10 +233,10 @@ func (tx *Tx) Blacklist() []string {
 
 // AddToBlacklist adds a repository id to the blacklist.
 func (tx *Tx) AddToBlacklist(repositoryID string) error {
-	return tx.Bucket("blacklist").Put([]byte(repositoryID), []byte{})
+	return tx.Bucket([]byte("blacklist")).Put([]byte(repositoryID), []byte{})
 }
 
 // RemoveFromBlacklist removes a repository id from the blacklist.
 func (tx *Tx) RemoveFromBlacklist(repositoryID string) error {
-	return tx.Bucket("blacklist").Delete([]byte(repositoryID))
+	return tx.Bucket([]byte("blacklist")).Delete([]byte(repositoryID))
 }
