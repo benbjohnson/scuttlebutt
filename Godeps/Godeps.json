@@ -1,0 +1,61 @@
+{
+	"ImportPath": "github.com/benbjohnson/scuttlebutt",
+	"GoVersion": "go1.5.1",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "code.google.com/p/goauth2/oauth",
+			"Comment": "weekly-44",
+			"Rev": "696c088491246273e92442aa66b5281e5bb34faa"
+		},
+		{
+			"ImportPath": "github.com/BurntSushi/toml",
+			"Comment": "v0.1.0-21-g056c9bc",
+			"Rev": "056c9bc7be7190eaa7715723883caffa5f8fa3e4"
+		},
+		{
+			"ImportPath": "github.com/boltdb/bolt",
+			"Comment": "v1.0-124-ga74efb5",
+			"Rev": "a74efb5d167b1f59d1dbe543f599d6764c22defd"
+		},
+		{
+			"ImportPath": "github.com/burntsushi/toml",
+			"Comment": "v0.1.0-21-g056c9bc",
+			"Rev": "056c9bc7be7190eaa7715723883caffa5f8fa3e4"
+		},
+		{
+			"ImportPath": "github.com/davecgh/go-spew/spew",
+			"Rev": "e762b3d1320b76030bd7f6cc2bfc3d9acce874c0"
+		},
+		{
+			"ImportPath": "github.com/gogo/protobuf/proto",
+			"Rev": "499788908625f4d83de42a204d1350fde8588e4f"
+		},
+		{
+			"ImportPath": "github.com/google/go-github/github",
+			"Rev": "2570a87f54b43ed0957cabd7a0819f0dab85217b"
+		},
+		{
+			"ImportPath": "github.com/google/go-querystring/query",
+			"Rev": "d8840cbb2baa915f4836edda4750050a2c0b7aea"
+		},
+		{
+			"ImportPath": "github.com/kurrik/json",
+			"Rev": "de158bdabfdf2be8745351e85b18bda75eb8dec6"
+		},
+		{
+			"ImportPath": "github.com/kurrik/oauth1a",
+			"Rev": "fc2542bc5f2532ed4a437960d2d51ff6e18a5cb6"
+		},
+		{
+			"ImportPath": "github.com/kurrik/twittergo",
+			"Rev": "7ce068b08f04d659d0c5c3a41aedd3266aa1024c"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/assert",
+			"Rev": "410219ae829b24af99a4d48a79858f23d0be42ee"
+		}
+	]
+}

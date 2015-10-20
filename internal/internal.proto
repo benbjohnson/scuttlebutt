@@ -1,0 +1,14 @@
+package internal;
+
+message Repository {
+	required string ID = 1;
+	required string Description = 2;
+	required string Language = 3;
+	required bool Notified = 4;
+	repeated Message Messages = 5;
+}
+
+message Message {
+	required uint64 ID = 1;
+	required string Text = 2;
+}

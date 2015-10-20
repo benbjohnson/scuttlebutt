@@ -1,7 +1,6 @@
-default: build
-
-build: 
-	mkdir -p build
-	cd cmd/scuttlebutt && goxc -c=.goxc.json -pr="$(PRERELEASE)" -d ../../build
-
-.PHONY: build
+# add scuttlebutt to .ssh/config
+deploy:
+	GOOS=linux go build -o /tmp/scuttlebuttd ./cmd/scuttlebuttd
+	gzip /tmp/scuttlebuttd
+	scp /tmp/scuttlebuttd.gz scuttlebutt:/usr/local/bin/scuttlebuttd.gz
+	ssh -T scuttlebutt "service scuttlebuttd stop && gunzip -f /usr/local/bin/scuttlebuttd.gz && service scuttlebuttd start"
