@@ -57,9 +57,9 @@ func main() {
 // Main represents the main program execution.
 type Main struct {
 	// Data store
-	store    *scuttlebutt.Store
-	poller   *twitter.Poller
-	notifier *twitter.Notifier
+	store     *scuttlebutt.Store
+	poller    *twitter.Poller
+	notifiers []*twitter.Notifier
 
 	// HTTP interface
 	Listener net.Listener
@@ -97,8 +97,9 @@ type Main struct {
 // NewMain returns a new instance of Main.
 func NewMain() *Main {
 	return &Main{
-		NotifyInterval: DefaultNotifyInterval,
-		PollInterval:   DefaultPollInterval,
+		PollInterval:        DefaultPollInterval,
+		NotifyInterval:      DefaultNotifyInterval,
+		NotifyCheckInterval: DefaultNotifyCheckInterval,
 
 		Stdin:  os.Stdin,
 		Stdout: os.Stdout,
@@ -133,6 +134,22 @@ func (m *Main) Run() error {
 		ConsumerKey:    m.Config.Twitter.Key,
 		ConsumerSecret: m.Config.Twitter.Secret,
 	}, nil)
+
+	// Initialize notifiers for each account
+	for _, acc := range m.Config.Accounts {
+		n := twitter.NewNotifier()
+		n.Username = acc.Username
+		n.Language = acc.Language
+		n.Client = twittergo.NewClient(
+			&oauth1a.ClientConfig{
+				ConsumerKey:    m.Config.Twitter.Key,
+				ConsumerSecret: m.Config.Twitter.Secret,
+			},
+			oauth1a.NewAuthorizedConfig(acc.Key, acc.Secret),
+		)
+
+		m.notifiers = append(m.notifiers, n)
+	}
 
 	// Open HTTP listener.
 	ln, err := net.Listen("tcp", m.Addr)
@@ -208,7 +225,7 @@ func (m *Main) runPoller() {
 	var sinceID uint64
 	for {
 		if err := m.poll(&sinceID); err != nil {
-			logger.Print(err)
+			logger.Printf("poll error: %s", err)
 		}
 
 		// Wait for next interval or for shutdown signal.
@@ -223,8 +240,6 @@ func (m *Main) runPoller() {
 // poll retrieves messages since a given ID.
 // The sinceID is updated if any messages are retrieved.
 func (m *Main) poll(sinceID *uint64) error {
-	logger := log.New(m.Stderr, "[poller] ", log.LstdFlags)
-
 	// Retrieve messages from twitter.
 	messages, err := m.poller.Poll(*sinceID)
 	if err != nil {
@@ -234,11 +249,9 @@ func (m *Main) poll(sinceID *uint64) error {
 	// Save messages to store.
 	for _, message := range messages {
 		if err := m.store.AddMessage(message); err == scuttlebutt.ErrRepositoryNotFound {
-			logger.Printf("repository not found: %s", message.RepositoryID)
+			// nop
 		} else if err != nil {
 			return fmt.Errorf("add message: %s", err)
-		} else {
-			logger.Printf("MSG: %s", message.Text)
 		}
 
 		// Update the highest "since id".
@@ -255,14 +268,13 @@ func (m *Main) runNotifier() {
 	defer m.wg.Done()
 
 	// Setup logging.
-	// logger := log.New(m.Stderr, "[notifier] ", log.LstdFlags)
-
-	return // FIXME
+	logger := log.New(m.Stderr, "[notifier] ", log.LstdFlags)
 
 	for {
-
-		panic("FIXME: retrieve top repositories by language")
-		panic("FIXME: notify each account if interval has passed")
+		// Attempt to notify accounts with new repos!
+		if err := m.notify(); err != nil {
+			logger.Printf("notify error: %s", err)
+		}
 
 		// Wait for next interval or for shutdown signal.
 		select {
@@ -271,6 +283,54 @@ func (m *Main) runNotifier() {
 			return
 		}
 	}
+}
+
+// notify sends a message to each account if enough time has elapsed.
+func (m *Main) notify() error {
+	// Setup logging.
+	logger := log.New(m.Stderr, "[notifier] ", log.LstdFlags)
+
+	// Retrieve top repositories by language.
+	repos, err := m.store.TopRepositories()
+	if err != nil {
+		return fmt.Errorf("top repositories: %s", err)
+	}
+
+	// Iterate over each account.
+	for _, n := range m.notifiers {
+		// Retrieve last tweet time.
+		lastTweetTime, err := n.LastTweetTime()
+		if err != nil {
+			logger.Printf("last tweet time error: username=%s, err=%s", n.Username, err)
+			continue
+		}
+
+		// Skip notifier if last tweet time is within interval.
+		if !lastTweetTime.IsZero() && time.Since(lastTweetTime) < DefaultNotifyInterval {
+			continue
+		}
+
+		// Retrieve top language for the repository.
+		r := repos[n.Language]
+		if r == nil {
+			continue
+		}
+
+		// Attempt to send message to account.
+		if _, err := n.Notify(r); err != nil {
+			logger.Printf("notify error: username=%s, repo=%s, err=%s", n.Username, r.ID, err)
+			continue
+		}
+		logger.Printf("NOTIFY: username=%s, repo=%s", n.Username, r.ID)
+
+		// Mark repository as notified.
+		if err := m.store.MarkNotified(r.ID); err != nil {
+			logger.Printf("mark notified error: username=%s, repo=%s, err=%s", r.ID, err)
+			continue
+		}
+	}
+
+	return nil
 }
 
 // Config represents the configuration.
@@ -302,6 +362,8 @@ type Account struct {
 	Language string `toml:"language"`
 	Key      string `toml:"key"`
 	Secret   string `toml:"secret"`
+
+	Client *twittergo.Client `toml:"-"`
 }
 
 // Duration is a helper type for unmarshaling durations in TOML.

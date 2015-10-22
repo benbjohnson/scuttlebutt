@@ -22,9 +22,9 @@ func TestStore_AddMessage_Duplicate(t *testing.T) {
 	}
 
 	// Add duplicate messages.
-	if err := s.AddMessage("github.com/user/repo", &scuttlebutt.Message{ID: 1, Text: "A"}); err != nil {
+	if err := s.AddMessage(&scuttlebutt.Message{ID: 1, Text: "A", RepositoryID: "github.com/user/repo"}); err != nil {
 		t.Fatal(err)
-	} else if err := s.AddMessage("github.com/user/repo", &scuttlebutt.Message{ID: 1, Text: "A"}); err != nil {
+	} else if err := s.AddMessage(&scuttlebutt.Message{ID: 1, Text: "A", RepositoryID: "github.com/user/repo"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -50,7 +50,7 @@ func TestStore_AddMessage_ErrRemoteStore(t *testing.T) {
 	}
 
 	// Add messages.
-	err := s.AddMessage("github.com/benbjohnson/go1", &scuttlebutt.Message{ID: 1, Text: "A"})
+	err := s.AddMessage(&scuttlebutt.Message{ID: 1, Text: "A", RepositoryID: "github.com/benbjohnson/go1"})
 	if err == nil || err.Error() != `remote: marker` {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -67,7 +67,7 @@ func TestStore_AddMessage_ErrRepositoryNotFound(t *testing.T) {
 	}
 
 	// Add message to
-	err := s.AddMessage("github.com/benbjohnson/no-such-repo", &scuttlebutt.Message{ID: 1, Text: "A"})
+	err := s.AddMessage(&scuttlebutt.Message{ID: 1, Text: "A", RepositoryID: "github.com/benbjohnson/no-such-repo"})
 	if err != scuttlebutt.ErrRepositoryNotFound {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -84,7 +84,7 @@ func TestStore_MarkNotified(t *testing.T) {
 	}
 
 	// Add message to pull in repository from remote store.
-	if err := s.AddMessage("github.com/user/repo", &scuttlebutt.Message{ID: 1, Text: "A"}); err != nil {
+	if err := s.AddMessage(&scuttlebutt.Message{ID: 1, Text: "A", RepositoryID: "github.com/user/repo"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -111,7 +111,6 @@ func TestStore_TopRepositories(t *testing.T) {
 	s.RemoteStore.RepositoryFn = func(id string) (*scuttlebutt.Repository, error) {
 		r := &scuttlebutt.Repository{
 			ID:          id,
-			URL:         "https://" + id,
 			Description: "lorem ipsum",
 		}
 
@@ -128,13 +127,13 @@ func TestStore_TopRepositories(t *testing.T) {
 	}
 
 	// Add messages.
-	if err := s.AddMessage("github.com/benbjohnson/go1", &scuttlebutt.Message{ID: 1, Text: "A"}); err != nil {
+	if err := s.AddMessage(&scuttlebutt.Message{ID: 1, Text: "A", RepositoryID: "github.com/benbjohnson/go1"}); err != nil {
 		t.Fatal(err)
-	} else if err := s.AddMessage("github.com/benbjohnson/go2", &scuttlebutt.Message{ID: 2, Text: "B"}); err != nil {
+	} else if err := s.AddMessage(&scuttlebutt.Message{ID: 2, Text: "B", RepositoryID: "github.com/benbjohnson/go2"}); err != nil {
 		t.Fatal(err)
-	} else if err := s.AddMessage("github.com/benbjohnson/go2", &scuttlebutt.Message{ID: 3, Text: "C"}); err != nil {
+	} else if err := s.AddMessage(&scuttlebutt.Message{ID: 3, Text: "C", RepositoryID: "github.com/benbjohnson/go2"}); err != nil {
 		t.Fatal(err)
-	} else if err := s.AddMessage("github.com/benbjohnson/js1", &scuttlebutt.Message{ID: 4, Text: "D"}); err != nil {
+	} else if err := s.AddMessage(&scuttlebutt.Message{ID: 4, Text: "D", RepositoryID: "github.com/benbjohnson/js1"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -145,7 +144,6 @@ func TestStore_TopRepositories(t *testing.T) {
 	} else if !reflect.DeepEqual(m, map[string]*scuttlebutt.Repository{
 		"go": &scuttlebutt.Repository{
 			ID:          "github.com/benbjohnson/go2",
-			URL:         "https://github.com/benbjohnson/go2",
 			Description: "lorem ipsum",
 			Language:    "go",
 			Messages: []*scuttlebutt.Message{
@@ -155,7 +153,6 @@ func TestStore_TopRepositories(t *testing.T) {
 		},
 		"javascript": &scuttlebutt.Repository{
 			ID:          "github.com/benbjohnson/js1",
-			URL:         "https://github.com/benbjohnson/js1",
 			Description: "lorem ipsum",
 			Language:    "javascript",
 			Messages: []*scuttlebutt.Message{

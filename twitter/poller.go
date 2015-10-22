@@ -72,7 +72,7 @@ func encodeTweet(tweet twittergo.Tweet) *scuttlebutt.Message {
 
 					// Only keep the first two parts of the path.
 					segments := strings.Split(u.Path, "/")
-					if len(segments) < 3 {
+					if len(segments) != 3 {
 						continue
 					}
 

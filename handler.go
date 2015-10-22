@@ -21,6 +21,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.serveTop(w, r)
 	case "/repositories":
 		h.serveRepositories(w, r)
+	case "/backup":
+		h.serveBackup(w, r)
 	default:
 		http.NotFound(w, r)
 	}
@@ -91,4 +93,14 @@ func (h *Handler) serveRepositories(w http.ResponseWriter, r *http.Request) {
 
 	// Flush the writer out.
 	cw.Flush()
+}
+
+// serveBackup writes the store to the response writer.
+func (h *Handler) serveBackup(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "binary/octet-stream")
+	w.Header().Set("Content-Disposition", "attachment; filename=db")
+	if _, err := h.Store.WriteTo(w); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }

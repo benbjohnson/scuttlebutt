@@ -3,6 +3,9 @@ package scuttlebutt
 import (
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/benbjohnson/scuttlebutt/internal"
@@ -205,6 +208,23 @@ func (s *Store) MarkNotified(repositoryID string) error {
 		}
 		return nil
 	})
+}
+
+// WriteTo writes the length and contents of the engine to w.
+func (s *Store) WriteTo(w io.Writer) (n int64, err error) {
+	tx, err := s.db.Begin(false)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	// Set content length header, if an HTTP response writer.
+	if w, ok := w.(http.ResponseWriter); ok {
+		w.Header().Set("Content-Length", strconv.FormatInt(tx.Size(), 10))
+	}
+
+	// Write data.
+	return tx.WriteTo(w)
 }
 
 // repository returns a repository by ID.
