@@ -54,6 +54,7 @@ func (n *Notifier) Notify(r *scuttlebutt.Repository) (*scuttlebutt.Message, erro
 	if err != nil {
 		return nil, fmt.Errorf("send request: %s", err)
 	}
+	defer resp.Body.Close()
 
 	// Parse the response.
 	var tweet twittergo.Tweet
@@ -90,6 +91,7 @@ func (n *Notifier) LastTweetTime() (time.Time, error) {
 	if err != nil {
 		return time.Time{}, fmt.Errorf("send request: %s", err)
 	}
+	defer resp.Body.Close()
 
 	// Parse the response.
 	var tweets twittergo.Timeline

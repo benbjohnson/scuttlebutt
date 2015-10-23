@@ -30,6 +30,7 @@ func (p *Poller) Poll(sinceID uint64) ([]*scuttlebutt.Message, error) {
 	if err != nil {
 		return nil, fmt.Errorf("send request: %s", err)
 	}
+	defer resp.Body.Close()
 
 	// Convert to search results.
 	var res twittergo.SearchResults
