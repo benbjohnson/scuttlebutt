@@ -137,16 +137,18 @@ func (m *Main) Run() error {
 
 	// Initialize notifiers for each account
 	for _, acc := range m.Config.Accounts {
-		n := twitter.NewNotifier()
-		n.Username = acc.Username
-		n.Language = acc.Language
-		n.Client = twittergo.NewClient(
+		client := twittergo.NewClient(
 			&oauth1a.ClientConfig{
 				ConsumerKey:    m.Config.Twitter.Key,
 				ConsumerSecret: m.Config.Twitter.Secret,
 			},
 			oauth1a.NewAuthorizedConfig(acc.Key, acc.Secret),
 		)
+
+		n := twitter.NewNotifier()
+		n.Username = acc.Username
+		n.Language = acc.Language
+		n.Client = client
 
 		m.notifiers = append(m.notifiers, n)
 	}

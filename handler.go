@@ -1,7 +1,9 @@
 package scuttlebutt
 
 import (
+	"bytes"
 	"encoding/csv"
+	"encoding/json"
 	"expvar"
 	"fmt"
 	"net/http"
@@ -127,15 +129,34 @@ func (h *Handler) serveBackup(w http.ResponseWriter, r *http.Request) {
 // serveExpvars handles /debug/vars requests.
 func (h *Handler) serveExpvars(w http.ResponseWriter, r *http.Request) {
 	// Copied from $GOROOT/src/expvar/expvar.go
+
+	// Generate JSON.
+	data := expvarJSON()
+
+	// Pretty print JSON.
+	var buf bytes.Buffer
+	if err := json.Indent(&buf, data, "", "  "); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Write to response.
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	fmt.Fprintf(w, "{\n")
+	buf.WriteTo(w)
+}
+
+// expvarJSON returns expvars as a JSON-formatted byte slice.
+func expvarJSON() []byte {
+	var buf bytes.Buffer
+	fmt.Fprintf(&buf, "{\n")
 	first := true
 	expvar.Do(func(kv expvar.KeyValue) {
 		if !first {
-			fmt.Fprintf(w, ",\n")
+			fmt.Fprintf(&buf, ",\n")
 		}
 		first = false
-		fmt.Fprintf(w, "%q: %s", kv.Key, kv.Value)
+		fmt.Fprintf(&buf, "%q: %s", kv.Key, kv.Value)
 	})
-	fmt.Fprintf(w, "\n}\n")
+	fmt.Fprintf(&buf, "\n}\n")
+	return buf.Bytes()
 }

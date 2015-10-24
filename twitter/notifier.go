@@ -29,15 +29,6 @@ func NewNotifier() *Notifier {
 	return &Notifier{}
 }
 
-// userConfig := oauth1a.NewAuthorizedConfig(key, secret)
-
-// return &Client{
-// 	Transport: twittergo.NewClient(&oauth1a.ClientConfig{
-// 		ConsumerKey:    consumerKey,
-// 		ConsumerSecret: consumerSecret,
-// 	}, userConfig),
-// }
-
 // Notify updates the authorized user's status. Returns the tweet ID on success.
 func (n *Notifier) Notify(r *scuttlebutt.Repository) (*scuttlebutt.Message, error) {
 	text := NotifyText(r)
@@ -111,7 +102,7 @@ func (n *Notifier) LastTweetTime() (time.Time, error) {
 func NotifyText(r *scuttlebutt.Repository) string {
 	const maxLength = 140
 	const shortUrlLength = 23
-	const padding = 2
+	const padding = 5
 	const format = "%s - %s %s"
 
 	name, url := r.Name(), r.URL()
