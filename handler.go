@@ -2,10 +2,13 @@ package scuttlebutt
 
 import (
 	"encoding/csv"
+	"expvar"
 	"fmt"
 	"net/http"
+	"net/http/pprof"
 	"sort"
 	"strconv"
+	"strings"
 )
 
 // Handler represents an HTTP interface to the store.
@@ -14,6 +17,20 @@ type Handler struct {
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if strings.HasPrefix(r.URL.Path, "/debug/pprof") {
+		switch r.URL.Path {
+		case "/debug/pprof/cmdline":
+			pprof.Cmdline(w, r)
+		case "/debug/pprof/profile":
+			pprof.Profile(w, r)
+		case "/debug/pprof/symbol":
+			pprof.Symbol(w, r)
+		default:
+			pprof.Index(w, r)
+		}
+		return
+	}
+
 	switch r.URL.Path {
 	case "/":
 		h.serveRoot(w, r)
@@ -23,6 +40,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.serveRepositories(w, r)
 	case "/backup":
 		h.serveBackup(w, r)
+	case "/debug/vars":
+		h.serveExpvars(w, r)
 	default:
 		http.NotFound(w, r)
 	}
@@ -103,4 +122,20 @@ func (h *Handler) serveBackup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+// serveExpvars handles /debug/vars requests.
+func (h *Handler) serveExpvars(w http.ResponseWriter, r *http.Request) {
+	// Copied from $GOROOT/src/expvar/expvar.go
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	fmt.Fprintf(w, "{\n")
+	first := true
+	expvar.Do(func(kv expvar.KeyValue) {
+		if !first {
+			fmt.Fprintf(w, ",\n")
+		}
+		first = false
+		fmt.Fprintf(w, "%q: %s", kv.Key, kv.Value)
+	})
+	fmt.Fprintf(w, "\n}\n")
 }
