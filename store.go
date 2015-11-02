@@ -157,6 +157,18 @@ func (s *Store) Repositories() (a []*Repository, err error) {
 	return
 }
 
+// RepositoryN returns the number of repositories in the store.
+func (s *Store) RepositoryN() (n int, err error) {
+	err = s.db.View(func(tx *bolt.Tx) error {
+		c := tx.Bucket([]byte("repositories")).Cursor()
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			n++
+		}
+		return nil
+	})
+	return
+}
+
 // TopRepositories returns the most mentioned repositories by language.
 func (s *Store) TopRepositories() (m map[string]*Repository, err error) {
 	m = make(map[string]*Repository)

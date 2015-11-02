@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Handler represents an HTTP interface to the store.
@@ -38,6 +39,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.serveRoot(w, r)
 	case "/top":
 		h.serveTop(w, r)
+	case "/top/stats":
+		h.serveTopStats(w, r)
 	case "/repositories":
 		h.serveRepositories(w, r)
 	case "/backup":
@@ -79,6 +82,32 @@ func (h *Handler) serveTop(w http.ResponseWriter, r *http.Request) {
 		r := m[k]
 		fmt.Fprintf(w, "%s: %s - %s\n", k, r.Name(), r.Description)
 	}
+}
+
+// serveTopStats prints timing stats for calculating top repos.
+func (h *Handler) serveTopStats(w http.ResponseWriter, r *http.Request) {
+	// Retrieve the top repositories.
+	topStartTime := time.Now()
+	_, err := h.Store.TopRepositories()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	topDuration := time.Since(topStartTime)
+
+	// Retrieve repository count.
+	nStartTime := time.Now()
+	repositoryN, err := h.Store.RepositoryN()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	nDuration := time.Since(nStartTime)
+
+	w.Header().Set("content-type", "text/plain")
+	fmt.Fprintf(w, "repositories: %d\n", repositoryN)
+	fmt.Fprintf(w, "top time: %s (%s per repo)\n", topDuration, topDuration/time.Duration(repositoryN))
+	fmt.Fprintf(w, "count time: %s\n", nDuration)
 }
 
 // serveRepositories prints a list of all repositories.
