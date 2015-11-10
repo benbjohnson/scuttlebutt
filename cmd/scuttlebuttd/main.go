@@ -320,7 +320,7 @@ func (m *Main) notify() error {
 
 		// Attempt to send message to account.
 		if _, err := n.Notify(r); err != nil {
-			logger.Printf("notify error: username=%s, repo=%s, err=%s", n.Username, r.ID, err)
+			logger.Printf("notify error: username=%s, repo=%s, text=%q, err=%s", n.Username, r.ID, twitter.NotifyText(r), err)
 			continue
 		}
 		logger.Printf("NOTIFY: username=%s, repo=%s", n.Username, r.ID)
