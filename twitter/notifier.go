@@ -101,14 +101,12 @@ func (n *Notifier) LastTweetTime() (time.Time, error) {
 // NotifyText returns a tweet sized message for a repository.
 func NotifyText(r *scuttlebutt.Repository) string {
 	const maxLength = 140
-	const shortUrlLength = 23
-	const padding = 5
 	const format = "%s - %s %s"
 
 	name, url := r.Name(), r.URL()
 
 	// Calculate the remaining characters without the description.
-	remaining := maxLength - len(fmt.Sprintf(format, name, "", strings.Repeat(" ", shortUrlLength))) - padding
+	remaining := maxLength - len(fmt.Sprintf(format, name, "", url))
 
 	// Shorten the description, if necessary.
 	var description = strings.TrimSpace(r.Description)
