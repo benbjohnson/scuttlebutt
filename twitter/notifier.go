@@ -110,7 +110,9 @@ func NotifyText(r *scuttlebutt.Repository) string {
 
 	// Shorten the description, if necessary.
 	var description = strings.TrimSpace(r.Description)
-	if len(description) > remaining {
+	if remaining < 3 {
+		description = ""
+	} else if len(description) > remaining {
 		description = strings.TrimSpace(description[:remaining-3]) + "..."
 	}
 
