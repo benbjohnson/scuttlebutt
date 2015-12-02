@@ -1,6 +1,7 @@
 package twitter
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -11,6 +12,9 @@ import (
 	"github.com/benbjohnson/scuttlebutt"
 	"github.com/kurrik/twittergo"
 )
+
+// ErrTweetTooLong is returned when a tweet has over 140 characters.
+var ErrTweetTooLong = errors.New("tweet too long")
 
 // Notifier represents a client to post messages to the Twitter API.
 type Notifier struct {
@@ -49,7 +53,9 @@ func (n *Notifier) Notify(r *scuttlebutt.Repository) (*scuttlebutt.Message, erro
 
 	// Parse the response.
 	var tweet twittergo.Tweet
-	if err := resp.Parse(&tweet); err != nil {
+	if err := resp.Parse(&tweet); err != nil && strings.Contains(err.Error(), "Status is over 140 characters") {
+		return nil, ErrTweetTooLong
+	} else if err != nil {
 		return nil, fmt.Errorf("parse: %s", err)
 	}
 

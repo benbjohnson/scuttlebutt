@@ -319,7 +319,12 @@ func (m *Main) notify() error {
 		}
 
 		// Attempt to send message to account.
-		if _, err := n.Notify(r); err != nil {
+		if _, err := n.Notify(r); err == twitter.ErrTweetTooLong {
+			// NOTE: if the text contains multiple URL-looking words then it can
+			// go over 140 characters. There's not an easy way to get around it
+			// so we just mark the repo as notified so we can move on.
+			logger.Printf("tweet too long error: username=%s, repo=%s", n.Username, r.ID)
+		} else if err != nil {
 			logger.Printf("notify error: username=%s, repo=%s, text=%q, err=%s", n.Username, r.ID, twitter.NotifyText(r), err)
 			continue
 		}
