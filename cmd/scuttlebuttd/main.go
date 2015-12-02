@@ -323,7 +323,7 @@ func (m *Main) notify() error {
 			logger.Printf("notify error: username=%s, repo=%s, text=%q, err=%s", n.Username, r.ID, twitter.NotifyText(r), err)
 			continue
 		}
-		logger.Printf("NOTIFY: username=%s, repo=%s", n.Username, r.ID)
+		// logger.Printf("NOTIFY: username=%s, repo=%s", n.Username, r.ID)
 
 		// Mark repository as notified.
 		if err := m.store.MarkNotified(r.ID); err != nil {

@@ -100,7 +100,7 @@ func (n *Notifier) LastTweetTime() (time.Time, error) {
 
 // NotifyText returns a tweet sized message for a repository.
 func NotifyText(r *scuttlebutt.Repository) string {
-	const maxLength = 140
+	const maxLength = 138
 	const format = "%s - %s %s"
 
 	name, url := r.Name(), r.URL()
