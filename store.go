@@ -72,6 +72,11 @@ func (s *Store) Close() error {
 	return nil
 }
 
+// Ping connects to the database. Returns nil if successful.
+func (s *Store) Ping() error {
+	return s.db.View(func(tx *bolt.Tx) error { return nil })
+}
+
 // AddMessage adds a message related to a repository.
 // Retrieves repository data from the remote store, if needed.
 func (s *Store) AddMessage(m *Message) error {

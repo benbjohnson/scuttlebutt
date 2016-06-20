@@ -37,6 +37,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Path {
 	case "/":
 		h.serveRoot(w, r)
+	case "/ping":
+		h.servePing(w, r)
 	case "/top":
 		h.serveTop(w, r)
 	case "/top/stats":
@@ -57,6 +59,17 @@ func (h *Handler) serveRoot(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, `<h1>scuttlebutt</h1>`)
 	fmt.Fprintln(w, `<p><a href="/top">Top Repositories by Language</a></p>`)
 	fmt.Fprintln(w, `<p><a href="/repositories">All Repositories</a></p>`)
+}
+
+// servePing verifies that the server is working correctly.
+func (h *Handler) servePing(w http.ResponseWriter, r *http.Request) {
+	if err := h.Store.Ping(); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintln(w, err)
+		return
+	}
+
+	fmt.Fprintln(w, "ok")
 }
 
 // serveTop prints a list of the top repository for each language.
