@@ -30,6 +30,7 @@ Below is a list of all the languages which have Twitter accounts:
 * [Perl](https://twitter.com/oss_pl)
 * [Python](https://twitter.com/oss_py)
 * [R](https://twitter.com/oss_rlang)
+* [Rust](https://twitter.com/oss_rust)
 * [Ruby](https://twitter.com/oss_rb)
 * [Scala](https://twitter.com/oss_scala)
 * [Shell](https://twitter.com/oss_sh)
