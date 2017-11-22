@@ -332,7 +332,7 @@ func (m *Main) notify() error {
 
 		// Mark repository as notified.
 		if err := m.store.MarkNotified(r.ID); err != nil {
-			logger.Printf("mark notified error: username=%s, repo=%s, err=%s", r.ID, err)
+			logger.Printf("mark notified error: username=%s, repo=%s, err=%s", n.Username, r.ID, err)
 			continue
 		}
 	}
@@ -363,7 +363,7 @@ func ParseConfigFile(path string) (*Config, error) {
 	return c, nil
 }
 
-// Account represents a Twitter account that tweets occassional trending repos.
+// Account represents a Twitter account that tweets occasional trending repos.
 type Account struct {
 	Username string `toml:"username"`
 	Language string `toml:"language"`
