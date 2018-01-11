@@ -21,7 +21,7 @@ Below is a list of all the languages which have Twitter accounts:
 * [Erlang](https://twitter.com/oss_erlang)
 * [F#](https://twitter.com/oss_fsharp)
 * [Go](https://twitter.com/oss_go)
-* [Haskell](https://twitter.com/oss_haskell)
+* [Haskell](https://twitter.com/github_haskell)
 * [Haxe](https://twitter.com/oss_haxe)
 * [Java](https://twitter.com/oss_java)
 * [JavaScript](https://twitter.com/oss_js)
